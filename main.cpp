@@ -1,6 +1,8 @@
 #include <iostream>
+#include <chrono>
+#include <thread>
 
-#include "memory_usage.h"
+#include "monitor_usage.h"
 #include "format.h"
 
 using namespace std;
@@ -8,9 +10,15 @@ using namespace std;
 int main() {
 
     float memory_usage_ratio = memory_usage();
-    string memory_usage_percentage = percentage(memory_usage_ratio);
 
-    cout << "Memory Usage: " << memory_usage_percentage << endl;
+    cpu_usage();
+
+    this_thread::sleep_for(chrono::milliseconds(500));
+
+    float cpu_usage_ratio = cpu_usage();
+
+    cout << "Memory Usage: " << percentage(memory_usage_ratio) << endl;
+    cout << "CPU Usage: " << percentage(cpu_usage_ratio) << endl;
 
     return 0;
 }
