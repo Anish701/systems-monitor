@@ -14,11 +14,12 @@ float memory_usage() {
         KERN_SUCCESS == host_statistics64(mach_port, HOST_VM_INFO,
                                         (host_info64_t)&vm_stats, &count))
     {
-        long long free_memory = (int64_t)vm_stats.free_count * (int64_t)page_size;
+        uint64_t free_memory = (int64_t)vm_stats.free_count * (int64_t)page_size;
 
-        long long used_memory = ((int64_t)vm_stats.active_count +
-                                 (int64_t)vm_stats.inactive_count +
-                                 (int64_t)vm_stats.wire_count) *  (int64_t)page_size;
+        uint64_t used_memory = ((int64_t)vm_stats.active_count +
+                                (int64_t)vm_stats.inactive_count +
+                                (int64_t)vm_stats.wire_count) * (int64_t)page_size;
+        
         return float(used_memory) / float(used_memory + free_memory);
     }
 
