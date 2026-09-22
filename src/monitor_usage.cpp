@@ -5,12 +5,17 @@
 #include <mach/mach_host.h>
 #include <mach/processor_info.h>
 
-float memory_usage() {
+#include "monitor_usage.h"
+
+UsageData memory_usage() {
+    UsageData memory_usage;
+
     vm_size_t page_size;
     vm_statistics64_data_t vm_stats;
 
     mach_port_t mach_port = mach_host_self();
     mach_msg_type_number_t count = sizeof(vm_stats) / sizeof(natural_t);
+
 
     if (KERN_SUCCESS == host_page_size(mach_port, &page_size) &&
         KERN_SUCCESS == host_statistics64(mach_port, HOST_VM_INFO,
@@ -22,13 +27,17 @@ float memory_usage() {
                                 (int64_t)vm_stats.inactive_count +
                                 (int64_t)vm_stats.wire_count) * (int64_t)page_size;
         
-        return float(used_memory) / float(used_memory + free_memory);
+        memory_usage.total_gb = float(free_memory + used_memory);
+        memory_usage.used_gb = float(used_memory);
+        memory_usage.usage_ratio = float(used_memory) / float(free_memory + used_memory);
     }
 
-    return -1;
+    return memory_usage;
 }
 
-float cpu_usage() {
+UsageData cpu_usage() {
+    UsageData cpu_usage;
+    
     static uint64_t prev_total = 0;
     static uint64_t prev_idle = 0;
 
@@ -45,7 +54,7 @@ float cpu_usage() {
     );
 
     if (result != KERN_SUCCESS) {
-        return -1;
+        return cpu_usage;
     }
 
     uint64_t total = 0;
@@ -77,7 +86,7 @@ float cpu_usage() {
     if (prev_total == 0) {
         prev_total = total;
         prev_idle = idle;
-        return 0.0f;
+        return cpu_usage;
     }
 
     uint64_t total_delta = total - prev_total;
@@ -87,8 +96,12 @@ float cpu_usage() {
     prev_idle = idle;
 
     if (total_delta == 0) {
-        return 0.0f;
+        return cpu_usage;
     }
 
-    return float(total_delta - idle_delta) / float(total_delta);
+    cpu_usage.total_gb = float(total_delta);
+    cpu_usage.used_gb = float(total_delta - idle_delta);
+    cpu_usage.usage_ratio = float(total_delta - idle_delta) / float(total_delta);
+
+    return cpu_usage;
 }
