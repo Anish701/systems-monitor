@@ -2,29 +2,33 @@
 #include <vector>
 #include <libproc.h>
 #include <unordered_map>
-#include <unistd.h>
+#include <chrono>
+
+#include "monitor_process.h"
 
 using namespace std;
 
 constexpr double BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0;
 
-struct Process {
-    int pid;
-    string name;
-    float cpu_usage;
-    float memory_usage;
-};
-
-std::string process_name(pid_t pid) {
+bool process_info(pid_t pid, string& name, int& parent_pid) {
     struct proc_bsdinfo proc;
-    
-    int bytes_returned = proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &proc, PROC_PIDTBSDINFO_SIZE);
-    
-    if (bytes_returned == PROC_PIDTBSDINFO_SIZE) {
-        return std::string(proc.pbi_name);
+
+    int bytes_returned = proc_pidinfo(
+        pid,
+        PROC_PIDTBSDINFO,
+        0,
+        &proc,
+        PROC_PIDTBSDINFO_SIZE
+    );
+
+    if (bytes_returned != PROC_PIDTBSDINFO_SIZE) {
+        return false;
     }
-    
-    return "";
+
+    name = string(proc.pbi_name);
+    parent_pid = proc.pbi_ppid;
+
+    return true;
 }
 
 float process_cpu_usage(pid_t pid) {
@@ -84,7 +88,7 @@ vector<Process> get_processes() {
     vector<pid_t> pids(buffer_size / sizeof(pid_t));
 
     int bytes_used = proc_listallpids(
-        pids.data(), 
+        pids.data(),
         pids.size() * sizeof(pid_t)
     );
 
@@ -92,16 +96,71 @@ vector<Process> get_processes() {
 
     vector<Process> processes;
 
-    for(int i = 0; i < pid_count; i++) {
+    for (int i = 0; i < pid_count; i++) {
+        if (pids[i] <= 0) {
+            continue;
+        }
+
         Process process;
+
         process.pid = pids[i];
-        process.name = process_name(pids[i]);
+
+        if (!process_info(
+                pids[i],
+                process.name,
+                process.parent_pid
+            )) {
+            continue;
+        }
 
         process.cpu_usage = process_cpu_usage(pids[i]);
         process.memory_usage = process_memory_usage(pids[i]);
-        
+
         processes.push_back(process);
     }
 
     return processes;
+}
+
+vector<Process> group_processes(const vector<Process>& processes) {
+    unordered_map<int, Process> process_by_pid;
+
+    for (const auto& process : processes) {
+        process_by_pid[process.pid] = process;
+    }
+
+    unordered_map<int, Process> grouped;
+
+    for (const auto& process : processes) {
+        int root_pid = process.pid;
+        int parent_pid = process.parent_pid;
+
+        while (
+            parent_pid > 1 &&
+            process_by_pid.contains(parent_pid)
+        ) {
+            root_pid = parent_pid;
+            parent_pid = process_by_pid[parent_pid].parent_pid;
+        }
+
+        if (!grouped.contains(root_pid)) {
+            Process root = process_by_pid[root_pid];
+
+            root.cpu_usage = 0;
+            root.memory_usage = 0;
+
+            grouped[root_pid] = root;
+        }
+
+        grouped[root_pid].cpu_usage += process.cpu_usage;
+        grouped[root_pid].memory_usage += process.memory_usage;
+    }
+
+    vector<Process> result;
+
+    for (const auto& [pid, process] : grouped) {
+        result.push_back(process);
+    }
+
+    return result;
 }

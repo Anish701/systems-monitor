@@ -19,6 +19,8 @@ int main() {
     print_usage(cpu_usage_data, memory_usage_data);
 
     vector<Process> processes = get_processes();
+
+    processes = group_processes(processes);
     
     print_processes(processes);
     
