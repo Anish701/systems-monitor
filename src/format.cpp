@@ -10,7 +10,7 @@ string percentage(float fraction) {
 }
 
 void print_usage(UsageData cpu_usage_data, UsageData memory_usage_data) {
-    cout << "RAM: " << percentage(memory_usage_data.usage_ratio) << " - " 
-         << format("{:.0f}", memory_usage_data.used) << " GB / " << format("{:.0f}", memory_usage_data.total) << " GB" << endl;
+    cout << "RAM: " << format("{:.0f}", memory_usage_data.used) << " GB / " 
+                    << format("{:.0f}", memory_usage_data.total) << " GB" << endl;
     cout << "CPU: " << percentage(cpu_usage_data.usage_ratio) << endl;
 }

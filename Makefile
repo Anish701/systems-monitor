@@ -1,6 +1,6 @@
 CXX = clang++
 CXXFLAGS = -std=c++20
-SRCS = src/main.cpp src/monitor_usage.cpp src/format.cpp
+SRCS = src/main.cpp src/monitor_usage.cpp src/format.cpp src/monitor_process.cpp
 EXE = monitor
 
 all:
