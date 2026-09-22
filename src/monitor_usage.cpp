@@ -8,7 +8,7 @@
 #include "monitor_usage.h"
 
 UsageData memory_usage() {
-    UsageData memory_usage;
+    UsageData memory_usage{};
 
     vm_size_t page_size;
     vm_statistics64_data_t vm_stats;
@@ -27,8 +27,10 @@ UsageData memory_usage() {
                                 (int64_t)vm_stats.inactive_count +
                                 (int64_t)vm_stats.wire_count) * (int64_t)page_size;
         
-        memory_usage.total_gb = float(free_memory + used_memory);
-        memory_usage.used_gb = float(used_memory);
+        const float BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0;
+
+        memory_usage.total_gb = float(free_memory + used_memory) / BYTES_PER_GB;
+        memory_usage.used_gb = float(used_memory) / BYTES_PER_GB;
         memory_usage.usage_ratio = float(used_memory) / float(free_memory + used_memory);
     }
 
@@ -36,7 +38,7 @@ UsageData memory_usage() {
 }
 
 UsageData cpu_usage() {
-    UsageData cpu_usage;
+    UsageData cpu_usage{};
     
     static uint64_t prev_total = 0;
     static uint64_t prev_idle = 0;
