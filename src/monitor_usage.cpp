@@ -7,6 +7,8 @@
 
 #include "monitor_usage.h"
 
+constexpr double BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0;
+
 UsageData memory_usage() {
     UsageData memory_usage{};
 
@@ -21,16 +23,14 @@ UsageData memory_usage() {
         KERN_SUCCESS == host_statistics64(mach_port, HOST_VM_INFO,
                                         (host_info64_t)&vm_stats, &count))
     {
-        uint64_t free_memory = (int64_t)vm_stats.free_count * (int64_t)page_size;
+        uint64_t free_memory = (uint64_t)vm_stats.free_count * (uint64_t)page_size;
 
-        uint64_t used_memory = ((int64_t)vm_stats.active_count +
-                                (int64_t)vm_stats.inactive_count +
-                                (int64_t)vm_stats.wire_count) * (int64_t)page_size;
+        uint64_t used_memory = ((uint64_t)vm_stats.active_count +
+                                (uint64_t)vm_stats.inactive_count +
+                                (uint64_t)vm_stats.wire_count) * (uint64_t)page_size;
         
-        const float BYTES_PER_GB = 1024.0 * 1024.0 * 1024.0;
-
-        memory_usage.total_gb = float(free_memory + used_memory) / BYTES_PER_GB;
-        memory_usage.used_gb = float(used_memory) / BYTES_PER_GB;
+        memory_usage.total = float(free_memory + used_memory) / BYTES_PER_GB;
+        memory_usage.used = float(used_memory) / BYTES_PER_GB;
         memory_usage.usage_ratio = float(used_memory) / float(free_memory + used_memory);
     }
 
@@ -101,8 +101,8 @@ UsageData cpu_usage() {
         return cpu_usage;
     }
 
-    cpu_usage.total_gb = float(total_delta);
-    cpu_usage.used_gb = float(total_delta - idle_delta);
+    cpu_usage.total = float(total_delta);
+    cpu_usage.used = float(total_delta - idle_delta);
     cpu_usage.usage_ratio = float(total_delta - idle_delta) / float(total_delta);
 
     return cpu_usage;

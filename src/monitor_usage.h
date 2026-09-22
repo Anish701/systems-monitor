@@ -2,8 +2,8 @@
 #define MONITOR_USAGE_H
 
 struct UsageData {
-    float total_gb;
-    float used_gb;
+    float total;
+    float used;
     float usage_ratio;
 };
 
