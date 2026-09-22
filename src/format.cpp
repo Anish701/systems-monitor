@@ -30,7 +30,7 @@ void print_usage(UsageData cpu_usage_data, UsageData memory_usage_data) {
 void print_processes(vector<Process> processes) {
     sort(processes.begin(), processes.end(),
         [](const Process& a, const Process& b) {
-            return a.cpu_usage > b.cpu_usage;
+            return a.memory_usage > b.memory_usage;
         }
     );
 
