@@ -57,9 +57,7 @@ float process_cpu_usage(pid_t pid) {
 
     double cpu_seconds = cpu_delta / 1'000'000'000.0;
 
-    int cpu_count = sysconf(_SC_NPROCESSORS_ONLN);
-
-    return (cpu_seconds / time_delta) / cpu_count;
+    return cpu_seconds / time_delta;
 }
 
 float process_memory_usage(pid_t pid) {
